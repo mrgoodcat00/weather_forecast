@@ -1,0 +1,92 @@
+plugins {
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.hilt)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.parcelize)
+}
+
+android {
+    namespace 'com.mrgoodcat.weathertestapp'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId "com.mrgoodcat.weathertestapp"
+        minSdk 24
+        targetSdk 35
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            debuggable false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+
+        debug {
+            debuggable true
+        }
+    }
+
+    buildFeatures {
+        viewBinding = true
+        buildConfig = true
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+    kotlinOptions {
+        jvmTarget = '11'
+    }
+}
+
+dependencies {
+    implementation(libs.moshi)
+    implementation(libs.moshi.kotlin)
+    implementation(libs.androidx.navigation.fragment.ktx)
+    implementation(libs.androidx.navigation.ui.ktx)
+    ksp(libs.moshi.kotlin.codegen)
+
+    implementation(libs.hilt)
+    ksp(libs.hilt.compiler)
+
+    implementation(libs.android.work.manager)
+    implementation(libs.coil)
+    implementation(libs.coil.network)
+    implementation(libs.timber)
+    implementation(libs.fragment)
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.moshi)
+    implementation(libs.retrofit.rx)
+    implementation(libs.lifecycle.view.model)
+    implementation(libs.lifecycle)
+    implementation(libs.androidx.navigation.fragment.ktx)
+    implementation(libs.androidx.navigation.fragment)
+    implementation(libs.androidx.navigation.nav.ui)
+    implementation(libs.androidx.navigation.nav.dynamic)
+    implementation(libs.rx.android)
+    implementation(libs.rx.java)
+    implementation(libs.play.services.location)
+
+    ksp(libs.room.anotation.processor)
+
+    implementation(libs.room.common)
+    implementation(libs.room.rx)
+    implementation(libs.room.ktx)
+    implementation(libs.room.runtime)
+
+    implementation libs.androidx.core.ktx
+    implementation libs.androidx.appcompat
+    implementation libs.material
+    implementation libs.androidx.activity
+    implementation libs.androidx.constraintlayout
+    testImplementation libs.junit
+    androidTestImplementation libs.androidx.junit
+    androidTestImplementation libs.androidx.espresso.core
+}

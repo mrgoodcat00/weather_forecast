@@ -1,0 +1,19 @@
+<resources>
+    <string name="app_name">WeatherTestApp</string>
+    <string name="weather_app_id" translatable="false">d05cb3a492cb7b6dd09e6b4220c84800</string>
+    <string name="weather_units" translatable="false">metric</string>
+    <string name="weather_api_url" translatable="false">https://api.openweathermap.org/data/2.5/</string>
+    <string name="room_db_name">weather_db</string>
+    <string name="city_search_hint">Type city name</string>
+    <string name="current_location_title_hint">Current location</string>
+    <string name="current_location_degrees_hint">28c</string>
+    <string name="current_location_weather_description">Clear clouds</string>
+    <string name="weather_icon">weather icon</string>
+    <string name="error_button_text">Got it</string>
+    <string name="error_unknown_text">Something went wrong, try later</string>
+    <string name="permission_declined_error">You declined location permission. You can\'t use realtime functionality.</string>
+    <string name="unknown_location">Unknown Location</string>
+    <string name="unknown_temp">0.0</string>
+    <string name="no_data">No data</string>
+    <string name="default_city">Warsaw</string>
+</resources>
