@@ -23,15 +23,15 @@ import timber.log.Timber
 class LocationApiImpl(context: Context) : LocationApi {
 
     private val client = LocationServices.getFusedLocationProviderClient(context)
+    //TODO change to proper timeout
     private val locationRequest = LocationRequest
-        .Builder(Priority.PRIORITY_LOW_POWER, 500)
+        .Builder(Priority.PRIORITY_HIGH_ACCURACY, 500)
         .build()
 
     private lateinit var locationCallback: LocationCallback
 
     override fun getCurrentLocation(): Single<Location> {
-        return Single
-            .create { result ->
+        return Single.create { result ->
                 client.getCurrentLocation(
                     Priority.PRIORITY_BALANCED_POWER_ACCURACY,
                     object : CancellationToken() {
@@ -41,35 +41,35 @@ class LocationApiImpl(context: Context) : LocationApi {
                         override fun isCancellationRequested() = false
                     },
                 ).addOnSuccessListener {
-                    Timber.d("OnSuccess ${Thread.currentThread().name}")
+                    Timber.e("getCurrentLocation OnSuccess $it")
                     result.onSuccess(it)
                 }.addOnFailureListener {
+                    Timber.e("getCurrentLocation OnSuccess $it")
                     result.onError(it)
                 }
             }
     }
 
     override fun subscribeOnLocationChanges(): Observable<Location> {
-        return Observable.create{ observable ->
+        return Observable.create { observable ->
             if (::locationCallback.isInitialized) {
                 client.removeLocationUpdates(locationCallback)
             }
 
             locationCallback = object : LocationCallback() {
                 override fun onLocationResult(locationResult: LocationResult) {
-                    Timber.d("onLocationResult $locationResult")
+                    Timber.e("onLocationResult $locationResult")
 
                     locationResult.lastLocation?.let {
                         observable.onNext(it)
-                        Timber.d(locationResult.lastLocation.toString())
+                        Timber.e(locationResult.lastLocation.toString())
                     }
                 }
             }
 
             client.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper())
         }.doOnDispose {
-
-            Timber.d("subscribeOnLocationChanges doOnDispose")
+            Timber.e("subscribeOnLocationChanges doOnDispose")
 
             if (::locationCallback.isInitialized)
                 client.removeLocationUpdates(locationCallback)

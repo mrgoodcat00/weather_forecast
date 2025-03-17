@@ -6,4 +6,5 @@
     <color name="main_accent_color">#001945</color>
     <color name="main_accent_color_light">#152E60</color>
     <color name="transparent">#00FFFFFF</color>
+    <color name="material_white_95">#F1F0F7</color>
 </resources>

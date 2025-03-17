@@ -1,6 +1,7 @@
 package com.mrgoodcat.weathertestapp.presentation
 
-import android.Manifest
+import android.Manifest.permission.ACCESS_COARSE_LOCATION
+import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
@@ -25,7 +26,7 @@ import timber.log.Timber
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var requestPermissionLauncher: ActivityResultLauncher<String>
+    private lateinit var requestPermissionLauncher: ActivityResultLauncher<Array<String>>
 
     private val viewModel: HomeViewModel by viewModels()
 
@@ -54,15 +55,19 @@ class MainActivity : AppCompatActivity() {
 
         subscribeOnErrors()
 
-        requestPermissionLauncher =
-            registerForActivityResult(ActivityResultContracts.RequestPermission()) { permission ->
-                if (!permission) {
+        requestPermissionLauncher = registerForActivityResult(
+            ActivityResultContracts.RequestMultiplePermissions()
+        ) { list ->
+            list.forEach {
+                if (!it.value) {
                     viewModel.sendGlobalError(this.getString(R.string.permission_declined_error))
                     viewModel.updateMainScreenWithDefaultLocation()
-                } else {
-                    viewModel.updateMainScreenWithRealtimeLocation()
+                    return@registerForActivityResult
                 }
             }
+
+            viewModel.updateMainScreenWithRealtimeLocation()
+        }
 
         checkPermissions()
     }
@@ -88,29 +93,46 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun checkPermissions() {
+        val fineLocation = ContextCompat.checkSelfPermission(this, ACCESS_FINE_LOCATION)
+        val coarseLocation = ContextCompat.checkSelfPermission(this, ACCESS_COARSE_LOCATION)
         when {
-            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
-                    == PackageManager.PERMISSION_GRANTED -> {
-               viewModel.updateMainScreenWithRealtimeLocation()
+            (fineLocation == PackageManager.PERMISSION_GRANTED
+                    && coarseLocation == PackageManager.PERMISSION_GRANTED) -> {
+                Timber.e("PERMISSION_GRANTED checked true")
+                viewModel.updateMainScreenWithRealtimeLocation()
             }
 
             ActivityCompat.shouldShowRequestPermissionRationale(
                 this,
-                Manifest.permission.ACCESS_COARSE_LOCATION
+                ACCESS_FINE_LOCATION
             ) -> {
-                Timber.d("shouldShowRequestPermissionRationale")
+                Timber.e("shouldShowRequestPermissionRationale")
+                viewModel.sendGlobalError(getString(R.string.permission_declined_error))
+                viewModel.updateMainScreenWithDefaultLocation()
+            }
+
+            ActivityCompat.shouldShowRequestPermissionRationale(
+                this,
+                ACCESS_COARSE_LOCATION
+            ) -> {
+                Timber.e("shouldShowRequestPermissionRationale")
                 viewModel.sendGlobalError(getString(R.string.permission_declined_error))
                 viewModel.updateMainScreenWithDefaultLocation()
             }
 
             else -> {
-                Timber.d("requestPermissions")
+                Timber.e("requestPermissions")
                 requestPermissions()
             }
         }
     }
 
     private fun requestPermissions() {
-        requestPermissionLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
+        requestPermissionLauncher.launch(
+            arrayOf(
+                ACCESS_FINE_LOCATION,
+                ACCESS_COARSE_LOCATION
+            )
+        )
     }
 }

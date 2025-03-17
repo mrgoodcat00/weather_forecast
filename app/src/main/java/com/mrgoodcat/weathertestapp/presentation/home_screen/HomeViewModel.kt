@@ -2,13 +2,14 @@ package com.mrgoodcat.weathertestapp.presentation.home_screen
 
 import androidx.lifecycle.ViewModel
 import com.mrgoodcat.weathertestapp.domain.model.ScreenDataState
+import com.mrgoodcat.weathertestapp.domain.use_case.SendGlobalStringErrorUseCase
+import com.mrgoodcat.weathertestapp.domain.use_case.SubscribeToErrorUseCase
 import com.mrgoodcat.weathertestapp.domain.use_case.home_screen.GetCurrentLocationUseCase
 import com.mrgoodcat.weathertestapp.domain.use_case.home_screen.GetWeatherByCityUseCase
+import com.mrgoodcat.weathertestapp.domain.use_case.home_screen.GetWeatherByLocationUseCase
 import com.mrgoodcat.weathertestapp.domain.use_case.home_screen.SaveWeatherUseCase
-import com.mrgoodcat.weathertestapp.domain.use_case.SendGlobalStringErrorUseCase
 import com.mrgoodcat.weathertestapp.domain.use_case.home_screen.SubscribeCurrentDbLocationUseCase
 import com.mrgoodcat.weathertestapp.domain.use_case.home_screen.SubscribeOnCurrentLocationUseCase
-import com.mrgoodcat.weathertestapp.domain.use_case.SubscribeToErrorUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.core.Observable
@@ -26,6 +27,7 @@ class HomeViewModel @Inject constructor(
     private val getCurrentLocationUseCase: GetCurrentLocationUseCase,
     private val saveWeatherUseCase: SaveWeatherUseCase,
     private val getWeatherByCityUseCase: GetWeatherByCityUseCase,
+    private val getWeatherByLocationUseCase: GetWeatherByLocationUseCase,
     private val subscribeCurrentDbLocationUseCase: SubscribeCurrentDbLocationUseCase,
 ) : ViewModel() {
 
@@ -33,8 +35,6 @@ class HomeViewModel @Inject constructor(
     private val currentLocationData = PublishSubject.create<ScreenDataState>()
 
     init {
-        currentLocationData.onNext(ScreenDataState.Loading)
-
         disposableBag.add(
             subscribeCurrentDbLocationUseCase
                 .execute()
@@ -42,7 +42,7 @@ class HomeViewModel @Inject constructor(
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
                     { data ->
-                        Timber.d("subscribeCurrentDbLocationUseCase onNext ${data}")
+                        Timber.e("subscribeCurrentDbLocationUseCase onNext ${data}")
                         if (data.isPresent) {
                             currentLocationData.onNext(
                                 ScreenDataState.Success(data.get())
@@ -55,7 +55,7 @@ class HomeViewModel @Inject constructor(
                     },
                     { error ->
                         //TODO map error
-                        Timber.d("subscribeCurrentDbLocationUseCase error $error")
+                        Timber.e("subscribeCurrentDbLocationUseCase error $error")
                         currentLocationData.onNext(
                             ScreenDataState.Error(error)
                         )
@@ -68,8 +68,12 @@ class HomeViewModel @Inject constructor(
         return subscribeToErrorUseCase.execute()
     }
 
-    fun sendGlobalError(error: String) {
+    fun sendGlobalError(error: String?) {
         sendGlobalStringErrorUseCase.execute(error)
+    }
+
+    fun sendLoadingState() {
+        currentLocationData.onNext(ScreenDataState.Loading)
     }
 
     fun updateMainScreenWithDefaultLocation() {
@@ -78,9 +82,13 @@ class HomeViewModel @Inject constructor(
                 .execute()
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
+                .doOnSubscribe {
+                    Timber.e("doOnSubscribe getWeatherByCityUseCase")
+                    sendLoadingState()
+                }
                 .subscribe(
                     { data ->
-                        Timber.d("updateMainScreenWithDefaultLocation $data")
+                        Timber.e("updateMainScreenWithDefaultLocation $data")
                         disposableBag.add(
                             saveWeatherUseCase
                                 .execute(data)
@@ -89,14 +97,67 @@ class HomeViewModel @Inject constructor(
                         )
                     },
                     { error ->
-                        Timber.d("updateMainScreenWithDefaultLocation error $error")
+                        Timber.e("updateMainScreenWithDefaultLocation error $error")
+                        sendGlobalError(error.message)
+                        currentLocationData.onNext(ScreenDataState.Error(error))
                     }
                 )
         )
     }
 
     fun updateMainScreenWithRealtimeLocation() {
-        updateMainScreenWithDefaultLocation()
+        disposableBag.add(
+            subscribeOnCurrentLocationUseCase
+                .execute()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .doOnSubscribe {
+                    Timber.e("doOnSubscribe subscribeOnCurrentLocationUseCase")
+                    sendLoadingState()
+                }
+                .subscribe(
+                    { location ->
+                        Timber.e("subscribeOnCurrentLocationUseCase location $location")
+
+                        disposableBag.add(
+                            getWeatherByLocationUseCase
+                                .execute(location)
+                                .subscribeOn(Schedulers.io())
+                                .observeOn(AndroidSchedulers.mainThread())
+                                .doOnSubscribe {
+                                    Timber.e("doOnSubscribe getWeatherByLocationUseCase")
+                                }
+                                .map { it.apply { it.id = 1 } }
+                                .subscribe(
+                                    { weather ->
+
+                                        Timber.e("getWeatherByLocationUseCase weather $weather")
+
+                                        disposableBag.add(
+                                            saveWeatherUseCase
+                                                .execute(weather)
+                                                .subscribeOn(Schedulers.io())
+                                                .doOnComplete {
+                                                    Timber.e("saveWeatherUseCase onComplete")
+                                                }
+                                                .subscribe()
+                                        )
+                                    },
+                                    { error ->
+                                        Timber.e("subscribeOnCurrentLocationUseCase error $error")
+                                        sendGlobalError(error.message)
+                                        currentLocationData.onNext(ScreenDataState.Error(error))
+                                    }
+                                )
+                        )
+                    },
+                    { error ->
+                        Timber.e("subscribeOnCurrentLocationUseCase error $error")
+                        sendGlobalError(error.message)
+                        currentLocationData.onNext(ScreenDataState.Error(error))
+                    }
+                )
+        )
     }
 
     fun subscribeOnScreenData(): Observable<ScreenDataState> {

@@ -10,8 +10,8 @@ class ErrorRepositoryImpl(val context: Context) : ErrorRepository {
 
     private var errorNotifier = PublishSubject.create<String>()
 
-    override fun showAnError(text: String) {
-        errorNotifier.onNext(text)
+    override fun showAnError(text: String?) {
+        errorNotifier.onNext(text ?: mapErrorCode(0))
     }
 
     override fun showAnError(error: Int) {

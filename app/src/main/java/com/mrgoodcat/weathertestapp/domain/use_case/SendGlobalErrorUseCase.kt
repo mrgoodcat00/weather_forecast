@@ -6,7 +6,7 @@ import javax.inject.Inject
 class SendGlobalStringErrorUseCase @Inject constructor(
     private val errorRepository: ErrorRepository
 ) {
-    fun execute(error: String) {
+    fun execute(error: String?) {
         errorRepository.showAnError(error)
     }
 }

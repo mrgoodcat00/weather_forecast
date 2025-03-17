@@ -50,7 +50,7 @@
         android:layout_marginTop="40dp"
         android:textAlignment="center"
         android:textColor="@color/degrees_text"
-        android:textSize="28sp"
+        android:textSize="45sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/current_location_title"
@@ -61,7 +61,7 @@
         android:layout_width="40dp"
         android:layout_height="40dp"
         android:layout_marginTop="40dp"
-        android:layout_marginRight="15dp"
+        android:layout_marginRight="5dp"
         android:contentDescription="@string/weather_icon"
         app:layout_constraintEnd_toStartOf="@+id/current_location_weather_description"
         app:layout_constraintHorizontal_chainStyle="packed"
@@ -70,6 +70,7 @@
         tools:src="@mipmap/ic_launcher" />
 
     <TextView
+        android:textAllCaps="true"
         android:id="@+id/current_location_weather_description"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

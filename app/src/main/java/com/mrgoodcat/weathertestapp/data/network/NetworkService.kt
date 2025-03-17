@@ -6,12 +6,12 @@ import retrofit2.http.GET
 import retrofit2.http.Query
 
 interface NetworkService {
-    @GET("weather")
+    @GET("weather/")
     fun getWeatherByCity(
         @Query("q") query: String,
     ): Single<WeatherBaseLocalModel>
 
-    @GET("weather")
+    @GET("weather/")
     fun getWeatherByLocation(
         @Query("lat") lat: String,
         @Query("lon") lon: String,

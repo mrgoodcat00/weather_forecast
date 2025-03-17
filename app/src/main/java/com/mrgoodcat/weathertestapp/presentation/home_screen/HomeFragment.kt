@@ -18,6 +18,9 @@ import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.disposables.CompositeDisposable
 import io.reactivex.rxjava3.schedulers.Schedulers
 import timber.log.Timber
+import java.math.RoundingMode
+import java.net.UnknownHostException
+import java.text.DecimalFormat
 
 @AndroidEntryPoint
 class HomeFragment : Fragment() {
@@ -45,42 +48,46 @@ class HomeFragment : Fragment() {
                     { data ->
                         when (data) {
                             is ScreenDataState.Error -> {
-                                Timber.d("Error $data")
+                                Timber.e("Error $data")
                                 binding.currentLocationProgress.visibility = View.GONE
                                 binding.currentLocationNoData.visibility = View.GONE
 
                                 if (data.error is NoSuchElementException) {
                                     binding.currentLocationNoData.visibility = View.VISIBLE
                                 }
+
+                                if (data.error is UnknownHostException) {
+                                    binding.currentLocationNoData.visibility = View.VISIBLE
+                                }
                             }
 
                             ScreenDataState.Loading -> {
-                                Timber.d("Loading")
+                                Timber.e("Loading")
                                 binding.currentLocationProgress.visibility = View.VISIBLE
                                 binding.currentLocationNoData.visibility = View.GONE
                             }
 
                             is ScreenDataState.Success -> {
-                                Timber.d("Success")
+                                Timber.e("Success $data")
                                 binding.currentLocationProgress.visibility = View.GONE
                                 binding.currentLocationNoData.visibility = View.GONE
                                 fillData(view.context, data.data)
                             }
 
                             ScreenDataState.Empty -> {
-                                Timber.d("Empty")
+                                Timber.e("Empty")
                                 binding.currentLocationProgress.visibility = View.GONE
                                 binding.currentLocationNoData.visibility = View.VISIBLE
                             }
                         }
-                    }, { error ->
-                        Timber.d("error $error")
+                    },
+                    { error ->
+                        Timber.e("error $error")
                         binding.currentLocationProgress.visibility = View.GONE
                         binding.currentLocationNoData.visibility = View.VISIBLE
                     }
                 )
         )
-
     }
 
     override fun onDestroyView() {
@@ -89,10 +96,13 @@ class HomeFragment : Fragment() {
     }
 
     private fun fillData(ctx: Context, data: WeatherBaseLocalModel) {
+        binding.currentLocationDegrees.text = data.main?.temp?.let {
+            val df = DecimalFormat("#.#°")
+            df.roundingMode = RoundingMode.CEILING
+            df.format(it)
+        } ?: "0.0°"
         binding.currentLocationTitle.text = data.name ?: ctx.getString(R.string.unknown_location)
-        binding.currentLocationDegrees.text = data.main?.temp.toString()
         binding.currentLocationWeatherIcon.load("$API_WEATHER_IMAGES_URL${data.weather[0].icon}.png")
         binding.currentLocationWeatherDescription.text = data.weather[0].description
     }
-
 }
