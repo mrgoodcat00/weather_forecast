@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.SearchView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import coil3.load
@@ -15,12 +16,16 @@ import com.mrgoodcat.weathertestapp.databinding.FragmentMainLayoutBinding
 import com.mrgoodcat.weathertestapp.domain.model.ScreenDataState
 import dagger.hilt.android.AndroidEntryPoint
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
+import io.reactivex.rxjava3.core.Observable
+import io.reactivex.rxjava3.core.ObservableEmitter
+import io.reactivex.rxjava3.core.ObservableOnSubscribe
 import io.reactivex.rxjava3.disposables.CompositeDisposable
 import io.reactivex.rxjava3.schedulers.Schedulers
 import timber.log.Timber
 import java.math.RoundingMode
 import java.net.UnknownHostException
 import java.text.DecimalFormat
+import java.util.concurrent.TimeUnit
 
 @AndroidEntryPoint
 class HomeFragment : Fragment() {
@@ -88,6 +93,49 @@ class HomeFragment : Fragment() {
                     }
                 )
         )
+
+        val handler: ObservableOnSubscribe<String> = object : ObservableOnSubscribe<String> {
+            override fun subscribe(emitter: ObservableEmitter<String>) {
+                binding.citySearchView.setOnQueryTextListener(
+                    object : SearchView.OnQueryTextListener {
+                        override fun onQueryTextSubmit(p0: String?): Boolean {
+                            emitter.onNext(p0 ?: "")
+                            return true
+                        }
+
+                        override fun onQueryTextChange(p0: String?): Boolean {
+                            emitter.onNext(p0 ?: "")
+                            return true
+                        }
+                    })
+            }
+
+        }
+
+        val res = Observable
+            .create(handler)
+            .filter { text -> !text.isEmpty() && text.length >= 3}
+            .debounce(1500, TimeUnit.MILLISECONDS)
+            .map { text -> text.lowercase().trim() }
+            .distinctUntilChanged()
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe {
+                Timber.d(it)
+                viewModel.updateMainScreenWithDefaultLocation(it)
+            }
+
+        binding.citySearchView.setOnSearchClickListener({
+            Timber.e("setOnSearchClickListener")
+        })
+
+        binding.citySearchView.setOnCloseListener({
+            viewModel.updateMainScreenWithDefaultLocation()
+            true
+        })
+
+        binding.citySearchView.setOnClickListener({
+            Timber.e("setOnClickListener")
+        })
     }
 
     override fun onDestroyView() {

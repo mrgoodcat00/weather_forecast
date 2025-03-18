@@ -76,10 +76,10 @@ class HomeViewModel @Inject constructor(
         currentLocationData.onNext(ScreenDataState.Loading)
     }
 
-    fun updateMainScreenWithDefaultLocation() {
+    fun updateMainScreenWithDefaultLocation(city: String? = null) {
         disposableBag.add(
             getWeatherByCityUseCase
-                .execute()
+                .execute(city)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnSubscribe {
