@@ -17,23 +17,23 @@ import com.mrgoodcat.weathertestapp.R
 import com.mrgoodcat.weathertestapp.databinding.ActivityMainBinding
 import com.mrgoodcat.weathertestapp.presentation.error.ErrorBottomSheet
 import com.mrgoodcat.weathertestapp.presentation.home_screen.HomeViewModel
+import com.mrgoodcat.weathertestapp.presentation.base_screen.BaseViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.disposables.CompositeDisposable
 import io.reactivex.rxjava3.schedulers.Schedulers
 import timber.log.Timber
 
+
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
-
     private lateinit var requestPermissionLauncher: ActivityResultLauncher<Array<String>>
+    private lateinit var binding: ActivityMainBinding
 
-    private val viewModel: HomeViewModel by viewModels()
+    private val baseViewModel: BaseViewModel by viewModels()
+    private val homeViewModel: HomeViewModel by viewModels()
 
     private var errorBottomSheet: ErrorBottomSheet? = null
-
-    lateinit var binding: ActivityMainBinding
-
     private val disposableBag = CompositeDisposable()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -43,9 +43,9 @@ class MainActivity : AppCompatActivity() {
 
         binding = ActivityMainBinding.inflate(layoutInflater)
 
-        setContentView(binding.main)
+        setContentView(binding.root)
 
-        ViewCompat.setOnApplyWindowInsetsListener(binding.main) { v, insets ->
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
@@ -60,15 +60,19 @@ class MainActivity : AppCompatActivity() {
         ) { list ->
             list.forEach {
                 if (!it.value) {
-                    viewModel.sendGlobalError(this.getString(R.string.permission_declined_error))
-                    viewModel.updateMainScreenWithDefaultLocation()
+                    baseViewModel.sendGlobalError(this.getString(R.string.permission_declined_error))
+                    homeViewModel.isLocalPermissionGiven = false
                     return@registerForActivityResult
                 }
+                homeViewModel.isLocalPermissionGiven = true
+
+                reSubscribeToAll()
             }
-
-            viewModel.updateMainScreenWithRealtimeLocation()
         }
+    }
 
+    override fun onStart() {
+        super.onStart()
         checkPermissions()
     }
 
@@ -77,16 +81,27 @@ class MainActivity : AppCompatActivity() {
         disposableBag.clear()
     }
 
+    private fun reSubscribeToAll() {
+        homeViewModel.unsubscribeAll()
+        homeViewModel.initMainSubscriber()
+        homeViewModel.updateLocation()
+    }
+
     private fun subscribeOnErrors() {
         disposableBag.add(
-            viewModel
+            baseViewModel
                 .subscribeOnErrors()
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
+                .doOnDispose {
+                    errorBottomSheet?.dismiss()
+                }
                 .subscribe(
                     { data ->
                         errorBottomSheet?.setError(data)
                         errorBottomSheet?.show()
+                    }, {
+                        Timber.e(it)
                     }
                 )
         )
@@ -99,7 +114,8 @@ class MainActivity : AppCompatActivity() {
             (fineLocation == PackageManager.PERMISSION_GRANTED
                     && coarseLocation == PackageManager.PERMISSION_GRANTED) -> {
                 Timber.e("PERMISSION_GRANTED checked true")
-                viewModel.updateMainScreenWithRealtimeLocation()
+                homeViewModel.isLocalPermissionGiven = true
+                reSubscribeToAll()
             }
 
             ActivityCompat.shouldShowRequestPermissionRationale(
@@ -107,8 +123,9 @@ class MainActivity : AppCompatActivity() {
                 ACCESS_FINE_LOCATION
             ) -> {
                 Timber.e("shouldShowRequestPermissionRationale")
-                viewModel.sendGlobalError(getString(R.string.permission_declined_error))
-                viewModel.updateMainScreenWithDefaultLocation()
+                baseViewModel.sendGlobalError(getString(R.string.permission_declined_error))
+                homeViewModel.isLocalPermissionGiven = false
+                reSubscribeToAll()
             }
 
             ActivityCompat.shouldShowRequestPermissionRationale(
@@ -116,8 +133,9 @@ class MainActivity : AppCompatActivity() {
                 ACCESS_COARSE_LOCATION
             ) -> {
                 Timber.e("shouldShowRequestPermissionRationale")
-                viewModel.sendGlobalError(getString(R.string.permission_declined_error))
-                viewModel.updateMainScreenWithDefaultLocation()
+                baseViewModel.sendGlobalError(getString(R.string.permission_declined_error))
+                homeViewModel.isLocalPermissionGiven = false
+                reSubscribeToAll()
             }
 
             else -> {

@@ -58,7 +58,7 @@ class LocationApiImpl(context: Context) : LocationApi {
 
             locationCallback = object : LocationCallback() {
                 override fun onLocationResult(locationResult: LocationResult) {
-                    Timber.e("onLocationResult $locationResult")
+                    //Timber.e("onLocationResult $locationResult")
 
                     locationResult.lastLocation?.let {
                         observable.onNext(it)

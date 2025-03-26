@@ -1,13 +1,10 @@
-package com.mrgoodcat.weathertestapp.data.model.weather_model
-
-import WeatherMainModel
 import android.os.Parcelable
 import androidx.room.Entity
+import com.mrgoodcat.weathertestapp.data.model.weather_model.WeatherMainLocalModel
 import kotlinx.parcelize.Parcelize
 
-@Entity
 @Parcelize
-data class WeatherMainLocalModel(
+data class WeatherMainModel(
     val temp: Double? = null,
     val feelsLike: Double? = null,
     val tempMin: Double? = null,
@@ -18,8 +15,8 @@ data class WeatherMainLocalModel(
     val grndLevel: Int? = null
 ) : Parcelable
 
-fun WeatherMainLocalModel.toWeatherMainModel(): WeatherMainModel {
-    return WeatherMainModel(
+fun WeatherMainModel.toWeatherMainLocalModel() : WeatherMainLocalModel {
+    return WeatherMainLocalModel(
         temp = this.temp,
         feelsLike = this.feelsLike,
         tempMin = this.tempMin,

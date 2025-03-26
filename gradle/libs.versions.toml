@@ -20,7 +20,7 @@ fragment_version = "1.8.6"
 retrofit = "2.9.0"
 lifecycle = "2.8.7"
 navigationFragmentKtx = "2.8.7"
-navigationUiKtx = "2.8.7"
+navigationUiKtx = "2.8.9"
 coilVersion = "3.1.0"
 work_version = "2.8.0"
 rx_version = "3.1.10"
@@ -63,7 +63,6 @@ android-work-manager = { group = "androidx.work", name = "work-runtime-ktx", ver
 rx-java = { group = "io.reactivex.rxjava3", name = "rxjava", version.ref = "rx_version" }
 rx-android = { group = "io.reactivex.rxjava3", name = "rxandroid", version.ref = "rx_android" }
 
-
 room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room_ktx_version" }
 room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room_ktx_version" }
 room-common = { group = "androidx.room", name = "room-common", version.ref = "room_ktx_version" }
@@ -77,4 +76,5 @@ android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+navigation-safeargs = { id = "androidx.navigation.safeargs.kotlin"}
 parcelize = { id = "kotlin-parcelize" }

@@ -14,7 +14,7 @@ import com.mrgoodcat.weathertestapp.data.model.WeatherBaseLocalModel
         AppSettingsLocalModel::class
     ],
     version = 1,
-    exportSchema = false
+    exportSchema = true
 )
 @TypeConverters(WeatherTypeConverter::class)
 abstract class WeatherDatabase : RoomDatabase() {

@@ -1,20 +1,17 @@
-package com.mrgoodcat.weathertestapp.data.model.weather_model
 
-import WindModel
 import android.os.Parcelable
-import androidx.room.Entity
+import com.mrgoodcat.weathertestapp.data.model.weather_model.WindLocalModel
 import kotlinx.parcelize.Parcelize
 
-@Entity
 @Parcelize
-data class WindLocalModel(
+data class WindModel(
     val speed: Double? = null,
     val deg: Int? = null,
     val gust: Double? = null
 ) : Parcelable
 
-fun WindLocalModel.toWindLocalModel(): WindModel {
-    return WindModel(
+fun WindModel.toWindLocalModel(): WindLocalModel {
+    return WindLocalModel(
         speed = this.speed,
         deg = this.deg,
         gust = this.gust

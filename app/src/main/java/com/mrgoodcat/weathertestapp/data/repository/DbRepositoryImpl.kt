@@ -5,6 +5,7 @@ import com.mrgoodcat.weathertestapp.data.model.AppSettingsLocalModel
 import com.mrgoodcat.weathertestapp.data.model.WeatherBaseLocalModel
 import com.mrgoodcat.weathertestapp.domain.repository.DbRepository
 import io.reactivex.rxjava3.core.Completable
+import io.reactivex.rxjava3.core.Flowable
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.core.Single
 import java.util.Optional
@@ -16,8 +17,20 @@ class DbRepositoryImpl(
         return db.getWeatherDao().insertWeather(model)
     }
 
+    override fun deleteWeather(model: WeatherBaseLocalModel): Completable {
+        return db.getWeatherDao().deleteWeather(model)
+    }
+
     override fun getWeatherById(id: String): Observable<Optional<WeatherBaseLocalModel>> {
         return db.getWeatherDao().getWeatherById(id)
+    }
+
+    override fun subscribeAllWeathers(id: String): Flowable<List<WeatherBaseLocalModel>> {
+        return db.getWeatherDao().subscribeAllWeathers(id)
+    }
+
+    override fun getSingleWeatherById(id: String): Single<Optional<WeatherBaseLocalModel>> {
+        return db.getWeatherDao().getSingleWeatherById(id)
     }
 
     override fun updateWeather(model: WeatherBaseLocalModel): Completable {

@@ -1,34 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main_navigation"
-    app:startDestination="@id/homeFragment">
-
+    android:label="MainNavigation"
+    app:startDestination="@id/startFragment">
     <fragment
-        android:id="@+id/homeFragment"
-        android:name="com.mrgoodcat.weathertestapp.presentation.home_screen.HomeFragment"
-        android:label="HomeFragment">
+        android:id="@+id/startFragment"
+        android:name="com.mrgoodcat.weathertestapp.presentation.base_screen.BaseFragment"
+        android:label="fragment_start"
+        tools:layout="@layout/fragment_base_layout" >
         <action
-            android:id="@+id/action_homeFragment_to_detailFragment"
-            app:destination="@id/detailFragment"
-            app:enterAnim="@android:anim/fade_in"
-            app:exitAnim="@android:anim/fade_out"
-            app:launchSingleTop="false" />
-    </fragment>
-    <fragment
-        android:id="@+id/detailFragment"
-        android:name="com.mrgoodcat.weathertestapp.presentation.detail_screen.DetailFragment"
-        android:label="DetailFragment">
-        <action
-            android:id="@+id/action_detailFragment_to_homeFragment"
-            app:destination="@id/homeFragment"
-            app:enterAnim="@android:anim/fade_in"
-            app:exitAnim="@android:anim/fade_out"
-            app:launchSingleTop="true"
-            app:popUpTo="@id/homeFragment" />
-        <argument
-            android:name="city_id"
-            android:defaultValue="1"
-            app:argType="string" />
+            android:id="@+id/action_startFragment2_to_nested_navigation"
+            app:destination="@id/nested_navigation" />
     </fragment>
 </navigation>

@@ -16,4 +16,10 @@
     <string name="unknown_temp" translatable="false">0.0</string>
     <string name="no_data">No data</string>
     <string name="default_city" translatable="false">Kyiv</string>
+    <string name="location_title_prefix">Main location: %s, %s</string>
+    <string name="location_title_prefix_additional_screen">Additional: %s, %s</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="visibilty_text">Visibility: %d m</string>
+    <string name="pressure_text">Pressure: %d hPa</string>
 </resources>
