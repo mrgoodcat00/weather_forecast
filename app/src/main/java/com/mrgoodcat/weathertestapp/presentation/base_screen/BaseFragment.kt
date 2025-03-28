@@ -11,6 +11,7 @@ import com.mrgoodcat.weathertestapp.databinding.FragmentBaseLayoutBinding
 import com.mrgoodcat.weathertestapp.domain.model.BaseScreenDataState
 import com.mrgoodcat.weathertestapp.domain.use_case.base_screen.WeatherHorizontalAdapter
 import dagger.hilt.android.AndroidEntryPoint
+import io.reactivex.rxjava3.disposables.CompositeDisposable
 import timber.log.Timber
 
 @AndroidEntryPoint
@@ -18,6 +19,7 @@ class BaseFragment : Fragment() {
     private lateinit var binding: FragmentBaseLayoutBinding
     private val baseViewModel: BaseViewModel by activityViewModels()
     private val weatherAdapter = WeatherHorizontalAdapter()
+    private val disposableBag = CompositeDisposable()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -30,9 +32,11 @@ class BaseFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        weatherAdapter.repoClickIntent.subscribe {
-            baseViewModel.clickedWeatherFromAdapter(it)
-        }
+        disposableBag.add(
+            weatherAdapter.repoClickIntent.subscribe {
+                baseViewModel.clickedWeatherFromAdapter(it)
+            }
+        )
 
         binding.savedCitiesList.adapter = weatherAdapter
 
@@ -71,16 +75,19 @@ class BaseFragment : Fragment() {
         })
     }
 
+    override fun onDestroyView() {
+        super.onDestroyView()
+        disposableBag.clear()
+    }
+
     override fun onPause() {
         super.onPause()
-        baseViewModel.unSubscribeBase()
-
-        HashMap<String,String>()
+        baseViewModel.unSubscribeOnWeatherFromDbBase()
     }
 
     override fun onResume() {
         super.onResume()
-        baseViewModel.subscribeBase()
+        baseViewModel.subscribeOnWeatherFromDbBase()
     }
 
 }

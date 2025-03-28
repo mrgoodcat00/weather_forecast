@@ -69,6 +69,7 @@ class MainActivity : AppCompatActivity() {
                 reSubscribeToAll()
             }
         }
+
     }
 
     override fun onStart() {

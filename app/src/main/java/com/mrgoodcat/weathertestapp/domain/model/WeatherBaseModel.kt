@@ -4,15 +4,13 @@ import WeatherMainModel
 import WeatherModel
 import WeatherSystemModel
 import WindModel
-import android.os.Parcelable
 import com.mrgoodcat.weathertestapp.data.model.WeatherBaseLocalModel
-import kotlinx.parcelize.Parcelize
 import toWeatherLocalModel
 import toWeatherMainLocalModel
 import toWeatherSystemLocalModel
 import toWindLocalModel
+import java.io.Serializable
 
-@Parcelize
 data class WeatherBaseModel(
     var id: Int = 0,
     var name: String? = null,
@@ -26,7 +24,7 @@ data class WeatherBaseModel(
     var wind: WindModel? = WindModel(),
 
     var sys: WeatherSystemModel? = WeatherSystemModel()
-) : Parcelable
+) : Serializable
 
 fun WeatherBaseModel.toWeatherBaseLocalModel(): WeatherBaseLocalModel {
     return WeatherBaseLocalModel(

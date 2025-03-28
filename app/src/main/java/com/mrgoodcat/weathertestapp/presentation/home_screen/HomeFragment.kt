@@ -8,6 +8,7 @@ import android.widget.SearchView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.Navigation.findNavController
+import androidx.navigation.fragment.findNavController
 import coil3.load
 import com.mrgoodcat.weathertestapp.R
 import com.mrgoodcat.weathertestapp.data.network.Constants.Companion.API_WEATHER_IMAGES_URL
@@ -15,6 +16,7 @@ import com.mrgoodcat.weathertestapp.databinding.FragmentMainLayoutBinding
 import com.mrgoodcat.weathertestapp.domain.model.BaseScreenDataState
 import com.mrgoodcat.weathertestapp.domain.model.WeatherBaseModel
 import com.mrgoodcat.weathertestapp.presentation.base_screen.BaseViewModel
+import com.mrgoodcat.weathertestapp.presentation.home_screen.HomeViewModel.HomeScreenState
 import dagger.hilt.android.AndroidEntryPoint
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.core.Observable
@@ -34,8 +36,7 @@ class HomeFragment : Fragment() {
     private val disposableBag = CompositeDisposable()
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
+        inflater: LayoutInflater, container: ViewGroup?, savedIState: Bundle?
     ): View {
         binding = FragmentMainLayoutBinding.inflate(inflater)
         return binding.root
@@ -43,16 +44,15 @@ class HomeFragment : Fragment() {
 
     override fun onStart() {
         super.onStart()
-        Timber.e("onStart HomeFragment")
+        subscribeOnRecyclerViewClick()
         homeViewModel.initMainSubscriber()
         homeViewModel.updateLocation()
     }
 
     override fun onStop() {
+        super.onStop()
         homeViewModel.unsubscribeAll()
         disposableBag.clear()
-        Timber.e("onStop HomeFragment")
-        super.onStop()
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -83,7 +83,8 @@ class HomeFragment : Fragment() {
                 is BaseScreenDataState.Success<*> -> {
                     binding.additionalLocationProgress.visibility = View.GONE
                     binding.additionalLocationNoData.visibility = View.GONE
-                    fillData(data.data as WeatherBaseModel)
+                    val state = data.data as HomeScreenState
+                    fillData(state.data.value)
                 }
 
                 BaseScreenDataState.Empty -> {
@@ -135,20 +136,22 @@ class HomeFragment : Fragment() {
                     HomeFragmentDirections.actionHomeFragmentToDetailFragment(cityName = it)
                 findNavController(view).navigate(action)
             }
+    }
 
+    private fun subscribeOnRecyclerViewClick() {
         disposableBag.add(
             baseViewModel
                 .clickedWeather
                 .subscribe({
                     val weatherId = it.id.toString()
-                    val action = HomeFragmentDirections
-                        .actionHomeFragmentToDetailFragment(cityId = weatherId)
-                    findNavController(view).navigate(action)
+                    val action = HomeFragmentDirections.actionHomeFragmentToDetailFragment(
+                        cityId = weatherId
+                    )
+                    findNavController().navigate(action)
                 }, {
                     Timber.e(it)
                 })
         )
-
     }
 
     private fun fillData(data: WeatherBaseModel) {

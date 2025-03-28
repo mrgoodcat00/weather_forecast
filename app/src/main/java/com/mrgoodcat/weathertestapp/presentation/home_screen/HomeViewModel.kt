@@ -2,6 +2,7 @@ package com.mrgoodcat.weathertestapp.presentation.home_screen
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import com.mrgoodcat.weathertestapp.domain.model.BaseScreenDataState
 import com.mrgoodcat.weathertestapp.domain.model.WeatherBaseModel
@@ -9,13 +10,15 @@ import com.mrgoodcat.weathertestapp.domain.use_case.SendGlobalStringErrorUseCase
 import com.mrgoodcat.weathertestapp.domain.use_case.home_screen.GetSingleWeatherByCityFromApiUseCase
 import com.mrgoodcat.weathertestapp.domain.use_case.home_screen.GetSingleWeatherByLocationFromApiUseCase
 import com.mrgoodcat.weathertestapp.domain.use_case.home_screen.SaveMainWeatherInDbUseCase
-import com.mrgoodcat.weathertestapp.domain.use_case.home_screen.SubscribeOnCurrentWeatherDbMainLocationUseCase
 import com.mrgoodcat.weathertestapp.domain.use_case.home_screen.SubscribeOnCurrentLocationUseCase
+import com.mrgoodcat.weathertestapp.domain.use_case.home_screen.SubscribeOnCurrentWeatherDbMainLocationUseCase
+import com.mrgoodcat.weathertestapp.presentation.home_screen.HomeViewModel.StateParams.ScreenData
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.disposables.CompositeDisposable
 import io.reactivex.rxjava3.schedulers.Schedulers
 import timber.log.Timber
+import java.io.Serializable
 import javax.inject.Inject
 
 @HiltViewModel
@@ -26,10 +29,13 @@ class HomeViewModel @Inject constructor(
     private val getSingleWeatherByCityFromApiUseCase: GetSingleWeatherByCityFromApiUseCase,
     private val getSingleWeatherByLocationFromApiUseCase: GetSingleWeatherByLocationFromApiUseCase,
     private val subscribeOnCurrentWeatherDbMainLocationUseCase: SubscribeOnCurrentWeatherDbMainLocationUseCase,
+    savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
     private val disposableBag = CompositeDisposable()
-    private val _screenState: MutableLiveData<BaseScreenDataState> = MutableLiveData()
+    private val _screenState: MutableLiveData<BaseScreenDataState> = savedStateHandle.getLiveData(
+        HOME_STATE_KEY, BaseScreenDataState.Loading
+    )
     val screenState: LiveData<BaseScreenDataState> = _screenState
     var isLocalPermissionGiven: Boolean = false
 
@@ -99,10 +105,8 @@ class HomeViewModel @Inject constructor(
                                 .observeOn(AndroidSchedulers.mainThread())
                                 .doOnDispose {
                                     Timber.e("doOnDispose getWeatherByLocationUseCase")
-                                }
-                                .materialize<WeatherBaseModel>()
-                        }
-                        .toObservable()
+                                }.materialize<WeatherBaseModel>()
+                        }.toObservable()
                 }
                 .subscribe({}, {
                     Timber.e(it)
@@ -120,8 +124,13 @@ class HomeViewModel @Inject constructor(
                     Timber.e("doOnSubscribe subscribeCurrentDbLocationUseCase")
                 }
                 .subscribe({ data ->
+                    Timber.e("subscribeCurrentDbLocationUseCase subscribe $data")
                     if (data.isPresent) {
-                        _screenState.value = BaseScreenDataState.Success(data.get())
+                        _screenState.value = BaseScreenDataState.Success(
+                            HomeScreenState(
+                                ScreenData(data.get())
+                            )
+                        )
                     } else {
                         _screenState.value = BaseScreenDataState.Empty
                     }
@@ -147,8 +156,20 @@ class HomeViewModel @Inject constructor(
     }
 
     override fun onCleared() {
-        unsubscribeAll()
-        Timber.e("onCleared HomeViewModel")
         super.onCleared()
+        Timber.e("onCleared HomeViewModel")
+        unsubscribeAll()
+    }
+
+    data class HomeScreenState(
+        val data: ScreenData = ScreenData()
+    ) : Serializable
+
+    sealed class StateParams : Serializable {
+        data class ScreenData(val value: WeatherBaseModel = WeatherBaseModel()) : StateParams()
+    }
+
+    companion object {
+        private const val HOME_STATE_KEY = "home_state_key"
     }
 }

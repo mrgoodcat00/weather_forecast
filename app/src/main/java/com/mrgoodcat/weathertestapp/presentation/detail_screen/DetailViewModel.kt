@@ -2,6 +2,7 @@ package com.mrgoodcat.weathertestapp.presentation.detail_screen
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import com.mrgoodcat.weathertestapp.domain.model.BaseScreenDataState
 import com.mrgoodcat.weathertestapp.domain.model.WeatherBaseModel
@@ -25,10 +26,13 @@ class DetailViewModel @Inject constructor(
     private val saveWeatherInDbUseCase: SaveWeatherInDbUseCase,
     private val getWeatherFromDbByCityIdUseCase: GetWeatherFromDbByCityUseCase,
     private val removeWeatherFromDbByCityUseCase: RemoveWeatherFromDbByCityUseCase,
+    savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
-
     val disposableBag = CompositeDisposable()
-    private val _screenState: MutableLiveData<BaseScreenDataState> = MutableLiveData()
+    private val _screenState: MutableLiveData<BaseScreenDataState> = savedStateHandle.getLiveData(
+        DETAIL_SCREEN_KEY,
+        BaseScreenDataState.Loading
+    )
     val screenState: LiveData<BaseScreenDataState> = _screenState
 
     private fun sendGlobalError(error: String?) {
@@ -160,5 +164,9 @@ class DetailViewModel @Inject constructor(
         clearDisposable()
         Timber.e("onCleared DetailViewModel")
         super.onCleared()
+    }
+
+    companion object {
+        private const val DETAIL_SCREEN_KEY = "detail_screen_key"
     }
 }

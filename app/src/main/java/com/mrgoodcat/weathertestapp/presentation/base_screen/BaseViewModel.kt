@@ -2,6 +2,7 @@ package com.mrgoodcat.weathertestapp.presentation.base_screen
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import com.mrgoodcat.weathertestapp.domain.model.BaseScreenDataState
 import com.mrgoodcat.weathertestapp.domain.model.WeatherBaseModel
@@ -25,7 +26,6 @@ import timber.log.Timber
 import java.io.Serializable
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
-import kotlin.random.Random
 
 @HiltViewModel
 class BaseViewModel @Inject constructor(
@@ -35,30 +35,32 @@ class BaseViewModel @Inject constructor(
     private val getSingleWeatherFromApiUseCase: GetSingleWeatherFromApiUseCase,
     private val saveWeatherInDbUseCase: SaveWeatherInDbUseCase,
     private val getAllWeatherFromDbUseCase: GetAllWeatherFromDbUseCase,
+    savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    private val _screenState: MutableLiveData<BaseScreenDataState> = MutableLiveData()
-    private val disposableUpdater = CompositeDisposable()
+    private val _screenState: MutableLiveData<BaseScreenDataState> = savedStateHandle.getLiveData(
+        BASE_STATE_KEY,
+        BaseScreenDataState.Loading
+    )
     private val disposableBag = CompositeDisposable()
 
     val clickedWeather: PublishSubject<WeatherBaseModel> = PublishSubject.create()
     val screenState: LiveData<BaseScreenDataState> = _screenState
 
-
-    fun getSingleWeatherByCity(city: String): Single<WeatherBaseModel> {
-        return getSingleWeatherFromApiUseCase.execute(city)
-    }
-
-    fun subscribeOnDbWeather(): Flowable<List<WeatherBaseModel>> {
+    private fun subscribeOnDbWeather(): Flowable<List<WeatherBaseModel>> {
         return subscribeOnDbLocationUseCase.execute()
     }
 
-    fun getAllItemsDbWeather(): Single<List<WeatherBaseModel>> {
+    private fun getAllItemsDbWeather(): Single<List<WeatherBaseModel>> {
         return getAllWeatherFromDbUseCase.execute()
     }
 
-    fun saveWeatherInDb(model: WeatherBaseModel): Completable {
+    private fun saveWeatherInDb(model: WeatherBaseModel): Completable {
         return saveWeatherInDbUseCase.execute(model)
+    }
+
+    private fun getWeatherByCity(city: String): Single<WeatherBaseModel> {
+        return getSingleWeatherFromApiUseCase.execute(city)
     }
 
     fun subscribeOnErrors(): Observable<String> {
@@ -73,7 +75,7 @@ class BaseViewModel @Inject constructor(
         clickedWeather.onNext(weather)
     }
 
-    fun subscribeBase() {
+    fun subscribeOnWeatherFromDbBase() {
         disposableBag.add(
             subscribeOnDbWeather()
                 .subscribeOn(Schedulers.io())
@@ -82,7 +84,7 @@ class BaseViewModel @Inject constructor(
                     { data ->
                         Timber.e("subscribeOnDbWeather data:$data")
                         _screenState.value = BaseScreenDataState
-                            .Success<BaseScreenState>(
+                            .Success(
                                 BaseScreenState(
                                     AdapterItems(data)
                                 )
@@ -94,10 +96,9 @@ class BaseViewModel @Inject constructor(
                 )
         )
 
-
-        disposableUpdater.add(
+        disposableBag.add(
             Observable
-                .interval(3, TimeUnit.SECONDS)
+                .interval(2, TimeUnit.MINUTES)
                 .map {
                     Timber.e("tick")
                     Observable
@@ -108,23 +109,25 @@ class BaseViewModel @Inject constructor(
                                 .map { resource ->
                                     val iterator = resource.listIterator()
                                     while (iterator.hasNext()) {
-                                        var item = iterator.next()
+                                        val item = iterator.next()
                                         if (item.id != 1) {
-
-                                            item = item.copy(
-                                                main = item.main?.copy(
-                                                    temp = Random.nextDouble(0.1, 18.2)
-                                                )
-                                            )
-
-                                            observable.onNext(item)
+                                            item.name?.let {
+                                                getWeatherByCity(it)
+                                                    .subscribeOn(Schedulers.io())
+                                                    .observeOn(AndroidSchedulers.mainThread())
+                                                    .subscribe({ data ->
+                                                        observable.onNext(data)
+                                                    }, {
+                                                        Timber.e(it)
+                                                    })
+                                            }
                                         }
                                     }
                                 }.subscribe({}, {
                                     observable.onError(it)
                                     Timber.e(it)
                                 })
-                            disposableUpdater.add(subscribe)
+                            disposableBag.add(subscribe)
                         }
                         .flatMapCompletable { data ->
                             saveWeatherInDb(data)
@@ -135,11 +138,9 @@ class BaseViewModel @Inject constructor(
         )
     }
 
-    fun unSubscribeBase() {
-        disposableUpdater.clear()
+    fun unSubscribeOnWeatherFromDbBase() {
         disposableBag.clear()
     }
-
 
     data class BaseScreenState(
         val adapterItems: AdapterItems = AdapterItems()
@@ -147,5 +148,9 @@ class BaseViewModel @Inject constructor(
 
     sealed class StateParams : Serializable {
         data class AdapterItems(val value: List<WeatherBaseModel> = emptyList()) : StateParams()
+    }
+
+    companion object {
+        private const val BASE_STATE_KEY = "base_state_key"
     }
 }

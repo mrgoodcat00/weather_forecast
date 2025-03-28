@@ -121,6 +121,11 @@ class DetailFragment : Fragment() {
         }
     }
 
+    override fun onDestroyView() {
+        super.onDestroyView()
+        disposableBag.clear()
+    }
+
     fun fillData(ctx: Context, data: WeatherBaseModel) {
         binding.additionalLocationDegrees.text = data.main?.temp?.let {
             val df = DecimalFormat("#.#°")
@@ -134,8 +139,10 @@ class DetailFragment : Fragment() {
         )
         binding.additionalLocationWeatherIcon.load("$API_WEATHER_IMAGES_URL${data.weather[0].icon}.png")
         binding.additionalLocationWeatherDescription.text = data.weather[0].description
-        binding.additionalLocationVisibility.text = getString(R.string.visibilty_text,data.visibility)
-        binding.additionalLocationPressure.text = getString(R.string.pressure_text,data.main?.pressure)
+        binding.additionalLocationVisibility.text =
+            getString(R.string.visibilty_text, data.visibility)
+        binding.additionalLocationPressure.text =
+            getString(R.string.pressure_text, data.main?.pressure)
     }
 
     private fun backToMain() {
@@ -143,4 +150,5 @@ class DetailFragment : Fragment() {
         val action = DetailFragmentDirections.actionDetailFragmentToHomeFragment()
         findNavController().navigate(action)
     }
+
 }
